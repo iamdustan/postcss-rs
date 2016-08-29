@@ -1,0 +1,7 @@
+[package]
+authors = ["iamdustan"]
+name = "postcss"
+version = "0.1.0"
+
+[dependencies]
+cssparser = "0.5"
