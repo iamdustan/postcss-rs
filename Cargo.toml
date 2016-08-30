@@ -4,4 +4,4 @@ name = "postcss"
 version = "0.1.0"
 
 [dependencies]
-cssparser = "0.5"
+regex = "0.1.73"
