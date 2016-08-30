@@ -1,5 +1,5 @@
 
-pub mod Tokenizer;
+pub mod tokenizer;
 
 pub fn lol () -> String {
     "It compiles".to_string()

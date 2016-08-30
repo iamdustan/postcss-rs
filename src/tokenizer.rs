@@ -30,7 +30,7 @@ impl Tokenizer {
         Tokenizer {
             buf: buf.to_string(),
             row: 1,
-            col: 0,
+            col: 1,
             pos: 0,
             tokens: vec![],
         }
@@ -47,28 +47,35 @@ impl Tokenizer {
     }
 
     fn lex_whitespace (&mut self) -> Option<Token> {
-        /*
-        let TAB = '\t';
-        let CR = '\r';
-        let NL = '\n';
-        if c == CR || c == NL {
-            self.line = self.line + 1;
-        } else {
-        }
-        */
+        // let TAB = '\t';
+        let cr = '\r';
+        let nl = '\n';
+
         let (start, end) = match (regex::Regex::new(r"^\s*").unwrap()).find(&self.buf[self.pos..]) {
             Some((s, e)) => (s + self.pos, e + self.pos),
             _ => return None,
         };
 
-        let result = Some(Token::Space(self.buf[start..end].to_string()));
         self.pos = end;
-        result
+        let matched = self.buf[start..end].to_string();
+
+        for c in matched.chars() {
+            if c == cr || c == nl {
+                self.row = self.row + 1;
+                self.col = 1;
+            } else {
+                self.col = self.col + 1;
+            }
+        }
+
+        Some(Token::Space(matched))
     }
 
     fn lex_letters (&mut self) -> Option<Token> {
-        let word_end = r"^\w*";
-        let sl = Location(self.row, if self.col == 0 { 1 } else { self.col });
+        let offset = 1;
+        let word_end = r"^[!]?\w*[^! ]";
+        // const RE_WORD_END = /[ \n\t\r\f\(\)\{\}:;@!'"\\]|\/(?=\*)/g;jk
+        let sl = Location(self.row, self.col);
         let (start, end) = match (regex::Regex::new(word_end).unwrap()).find(&self.buf[self.pos..]) {
             Some((s, e)) => (s + self.pos, e + self.pos),
             _ => {
@@ -78,11 +85,14 @@ impl Tokenizer {
         };
         let advanced = end - start;
         self.pos += advanced;
-        self.col = end;
+        println!("\nLexing in\n  {}", self.buf);
+        println!("  \"{}\" advances column({}) by {}", self.buf[start..end].to_string(), self.col, advanced);
+        println!("  ({}, {})", start, end);
+        self.col = self.col + advanced - offset;
         let result = Some(Token::Word(
             self.buf[start..end].to_string(),
             sl,
-            Location(self.row, end)
+            Location(self.row, self.col)
         ));
         result
     }
@@ -95,19 +105,13 @@ impl Iterator for Tokenizer {
         if self.pos >= self.buf.len() {
             return None;
         }
-        // TODO: scanner
-        println!("\nself.pos {}", self.pos);
-        println!("self.buf {}", self.buf.len());
-        println!("looking at {}", self.buf.chars().nth(self.pos).unwrap());
         match self.buf.chars().nth(self.pos).unwrap() {
             '!' => {
                 self.col += 1;
-                self.pos += 1;
-                // skip to the next
-                self.next()
-            }
+                self.lex_letters()
+            },
             x if x.is_whitespace() => self.lex_whitespace(),
-            x if x.is_alphabetic() => self.lex_letters(),
+            x if x.is_alphanumeric() => self.lex_letters(),
             _ => None,
         }
     }

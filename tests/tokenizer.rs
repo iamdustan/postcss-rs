@@ -1,5 +1,5 @@
 extern crate postcss;
-use postcss::Tokenizer::{
+use postcss::tokenizer::{
     Location,
     Token,
     Tokenizer
@@ -41,16 +41,15 @@ fn it_tokenizes_word_new() {
 fn it_splits_word_by_bang() {
     test("aa!bb", vec![
         Token::Word("aa".to_string(), Location(1, 1), Location(1, 2)),
-        Token::Word("bb".to_string(), Location(1, 3), Location(1, 5)),
+        Token::Word("!bb".to_string(), Location(1, 3), Location(1, 5)),
     ]);
 }
 
 #[test]
-#[ignore]
 fn it_changes_lines_in_spaces() {
     test("a \n b", vec![
         Token::Word("a".to_string(), Location(1, 1), Location(1, 1)),
-        Token::Space("\n".to_string()),
+        Token::Space(" \n ".to_string()),
         Token::Word("b".to_string(), Location(2, 2), Location(2, 2)),
     ]);
 }
