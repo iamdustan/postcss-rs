@@ -55,7 +55,6 @@ fn it_changes_lines_in_spaces() {
 }
 
 #[test]
-#[ignore]
 fn it_tokenizes_control_chars() {
     test("{:;}", vec![
         Token::Control("{".to_string(), Location(1, 1)),

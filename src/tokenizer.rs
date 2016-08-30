@@ -71,6 +71,15 @@ impl Tokenizer {
         Some(Token::Space(matched))
     }
 
+    fn lex_control (&mut self) -> Option<Token> {
+        self.col += 1;
+        self.pos += 1;
+        Some(Token::Control(
+            self.buf[self.pos - 1..self.pos].to_string(),
+            Location(self.row, self.col - 1)
+        ))
+    }
+
     fn lex_letters (&mut self) -> Option<Token> {
         let offset = 1;
         let word_end = r"^[!]?\w*[^! ]";
@@ -85,16 +94,17 @@ impl Tokenizer {
         };
         let advanced = end - start;
         self.pos += advanced;
+        /*
         println!("\nLexing in\n  {}", self.buf);
         println!("  \"{}\" advances column({}) by {}", self.buf[start..end].to_string(), self.col, advanced);
         println!("  ({}, {})", start, end);
+        */
         self.col = self.col + advanced - offset;
-        let result = Some(Token::Word(
+        Some(Token::Word(
             self.buf[start..end].to_string(),
             sl,
             Location(self.row, self.col)
-        ));
-        result
+        ))
     }
 }
 
@@ -106,6 +116,10 @@ impl Iterator for Tokenizer {
             return None;
         }
         match self.buf.chars().nth(self.pos).unwrap() {
+            '{' => self.lex_control(),
+            ':' => self.lex_control(),
+            ';' => self.lex_control(),
+            '}' => self.lex_control(),
             '!' => {
                 self.col += 1;
                 self.lex_letters()
