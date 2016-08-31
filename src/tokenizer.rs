@@ -26,7 +26,7 @@ pub struct Tokenizer {
 }
 
 impl Tokenizer {
-    pub fn new (buf: &str) -> Tokenizer {
+    pub fn new(buf: &str) -> Tokenizer {
         Tokenizer {
             buf: buf.to_string(),
             row: 1,
@@ -36,7 +36,7 @@ impl Tokenizer {
         }
     }
 
-    pub fn get_tokens (&mut self) -> &Vec<Token> {
+    pub fn get_tokens(&mut self) -> &Vec<Token> {
         loop {
             match self.next() {
                 Some(x) => self.tokens.push(x),
@@ -46,7 +46,7 @@ impl Tokenizer {
         return &self.tokens;
     }
 
-    fn lex_whitespace (&mut self) -> Option<Token> {
+    fn lex_whitespace(&mut self) -> Option<Token> {
         // let TAB = '\t';
         let cr = '\r';
         let nl = '\n';
@@ -71,7 +71,7 @@ impl Tokenizer {
         Some(Token::Space(matched))
     }
 
-    fn lex_control (&mut self) -> Option<Token> {
+    fn lex_control(&mut self) -> Option<Token> {
         self.col += 1;
         self.pos += 1;
         Some(Token::Control(
@@ -80,7 +80,7 @@ impl Tokenizer {
         ))
     }
 
-    fn lex_letters (&mut self) -> Option<Token> {
+    fn lex_letters(&mut self) -> Option<Token> {
         let offset = 1;
         let word_end = r"^[!]?\w*[^! ]";
         // const RE_WORD_END = /[ \n\t\r\f\(\)\{\}:;@!'"\\]|\/(?=\*)/g;jk
@@ -106,6 +106,61 @@ impl Tokenizer {
             Location(self.row, self.col)
         ))
     }
+
+    #[allow(non_snake_case)]
+    fn lex_backslash(&mut self) -> Option<Token> {
+        let BACKSLASH = '\\';
+        let CR = '\r';
+        let NEWLINE = '\n';
+        let SLASH = '/';
+        let SPACE = ' ';
+        let TAB = '\t';
+
+        let mut next = self.pos;
+        let mut escape = true;
+
+        let mut next_char = '_';
+        for ch in self.buf[self.pos..].chars() {
+            if ch != BACKSLASH {
+                next_char = ch;
+                break;
+            }
+
+            next += 1;
+            escape = !escape;
+        }
+        if escape && (next_char != SLASH   &&
+                      next_char != SPACE   &&
+                      next_char != NEWLINE &&
+                      next_char != TAB     &&
+                      next_char != CR) {
+            next += 1;
+        }
+        next -= 1;
+        println!("\nself.pos {}", self.pos);
+        println!("next {}", next);
+        // let result = Some(Token::Word("\\\\\\\\".to_string(), Location(self.row, 0), Location(self.row, 4)));
+        let result = Some(Token::Word(
+            self.buf[self.pos..next].to_string(),
+            Location(self.row, self.pos + 1),
+            Location(self.row, next)
+        ));
+        self.pos = next;
+        self.col += next;
+        result
+    }
+
+    fn lex_openparen(&mut self) -> Option<Token> {
+        unimplemented!();
+    }
+
+    fn lex_quote(&mut self, quote:char) -> Option<Token> {
+        unimplemented!();
+    }
+
+    fn lex_atword(&mut self) -> Option<Token> {
+        unimplemented!();
+    }
 }
 
 impl Iterator for Tokenizer {
@@ -117,13 +172,19 @@ impl Iterator for Tokenizer {
         }
         match self.buf.chars().nth(self.pos).unwrap() {
             '{' => self.lex_control(),
+            '}' => self.lex_control(),
             ':' => self.lex_control(),
             ';' => self.lex_control(),
-            '}' => self.lex_control(),
             '!' => {
                 self.col += 1;
                 self.lex_letters()
             },
+            '(' => self.lex_openparen(),
+            ')' => self.lex_control(),
+            '\'' => self.lex_quote('\''),
+            '"' => self.lex_quote('"'),
+            '@' => self.lex_atword(),
+            '\\' => self.lex_backslash(),
             x if x.is_whitespace() => self.lex_whitespace(),
             x if x.is_alphanumeric() => self.lex_letters(),
             _ => None,

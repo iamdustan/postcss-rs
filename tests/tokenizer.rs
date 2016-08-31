@@ -13,12 +13,12 @@ fn test(input:&str, expected:Vec<Token>) {
 }
 
 #[test]
-fn it_compiles_new() {
+fn it_compiles() {
     test("", vec![]);
 }
 
 #[test]
-fn it_tokenizes_single_character_space_new() {
+fn it_tokenizes_single_character_space() {
     test(" ", vec![Token::Space(" ".to_string())]);
     test(&'\n'.to_string(), vec![Token::Space('\n'.to_string())]);
     test(&'\r'.to_string(), vec![Token::Space('\r'.to_string())]);
@@ -26,7 +26,7 @@ fn it_tokenizes_single_character_space_new() {
 }
 
 #[test]
-fn it_tokenizes_space_new() {
+fn it_tokenizes_space() {
     let s = "\r\n \t";
     test(s, vec![Token::Space(s.to_string())]);
 }
@@ -78,7 +78,6 @@ fn it_escapes_control_symbols() {
 }
 
 #[test]
-#[ignore]
 fn it_escapes_backslash() {
     test("\\\\\\\\{", vec![
         Token::Word("\\\\\\\\".to_string(), Location(1, 1), Location(1, 4)),
