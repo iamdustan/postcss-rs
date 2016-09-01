@@ -25,6 +25,13 @@ pub struct Tokenizer {
     tokens: Vec<Token>,
 }
 
+const BACKSLASH:char = '\\';
+const CR:char = '\r';
+const NEWLINE:char = '\n';
+const SLASH:char = '/';
+const SPACE:char = ' ';
+const TAB:char = '\t';
+
 impl Tokenizer {
     pub fn new(buf: &str) -> Tokenizer {
         Tokenizer {
@@ -47,10 +54,6 @@ impl Tokenizer {
     }
 
     fn lex_whitespace(&mut self) -> Option<Token> {
-        // let TAB = '\t';
-        let cr = '\r';
-        let nl = '\n';
-
         let (start, end) = match (regex::Regex::new(r"^\s*").unwrap()).find(&self.buf[self.pos..]) {
             Some((s, e)) => (s + self.pos, e + self.pos),
             _ => return None,
@@ -60,7 +63,7 @@ impl Tokenizer {
         let matched = self.buf[start..end].to_string();
 
         for c in matched.chars() {
-            if c == cr || c == nl {
+            if c == CR || c == NEWLINE {
                 self.row = self.row + 1;
                 self.col = 1;
             } else {
@@ -107,19 +110,11 @@ impl Tokenizer {
         ))
     }
 
-    #[allow(non_snake_case)]
     fn lex_backslash(&mut self) -> Option<Token> {
-        let BACKSLASH = '\\';
-        let CR = '\r';
-        let NEWLINE = '\n';
-        let SLASH = '/';
-        let SPACE = ' ';
-        let TAB = '\t';
-
         let mut next = self.pos;
         let mut escape = true;
 
-        let mut next_char = '_';
+        let mut next_char:char = '_';
         for ch in self.buf[self.pos..].chars() {
             if ch != BACKSLASH {
                 next_char = ch;
@@ -137,8 +132,6 @@ impl Tokenizer {
             next += 1;
         }
         next -= 1;
-        println!("\nself.pos {}", self.pos);
-        println!("next {}", next);
         // let result = Some(Token::Word("\\\\\\\\".to_string(), Location(self.row, 0), Location(self.row, 4)));
         let result = Some(Token::Word(
             self.buf[self.pos..next].to_string(),
@@ -151,7 +144,24 @@ impl Tokenizer {
     }
 
     fn lex_openparen(&mut self) -> Option<Token> {
-        unimplemented!();
+        let mut contents = String::from("");
+        let mut next = self.pos;
+        for ch in self.buf[self.pos..].chars() {
+            contents.push(ch);
+            if ch == ')' {
+                break;
+            }
+            next += 1;
+        }
+        println!("contents: {}", contents);
+        let result = Some(Token::Brackets(
+                contents,
+                Location(self.row, self.col),
+                Location(self.row, self.col + next - self.pos)
+        ));
+        self.pos = next + 1;
+        self.col = self.col + next - self.pos;
+        result
     }
 
     fn lex_quote(&mut self, quote:char) -> Option<Token> {
@@ -194,10 +204,6 @@ impl Iterator for Tokenizer {
 
 #[allow(unused_variables, non_snake_case)]
 pub fn tokenizer(input: &str) -> Vec<Token> {
-    let SPACE = ' ';
-    let TAB = '\t';
-    let CR = '\r';
-    let NL = '\n';
     let mut offset = -1;
     let mut line = 1;
     let mut pos = 0;
@@ -208,7 +214,7 @@ pub fn tokenizer(input: &str) -> Vec<Token> {
     while let Some(c) = iter.next() {
         pos = pos + 1;
         if c.is_whitespace() {
-            if c == CR || c == NL {
+            if c == CR || c == NEWLINE {
                 line = line + 1;
             } else {
                 offset = offset + 1;

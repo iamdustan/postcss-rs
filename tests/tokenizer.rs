@@ -86,7 +86,6 @@ fn it_escapes_backslash() {
 }
 
 #[test]
-#[ignore]
 fn it_tokenizes_simple_brackets() {
     let s = "(ab)";
     test(s, vec![Token::Brackets(s.to_string(), Location(1, 1), Location(1, 4))]);
